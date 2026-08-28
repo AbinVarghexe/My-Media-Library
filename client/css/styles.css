@@ -1,0 +1,1427 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   My Media Library — Apple & Notion Minimal Motion Design System
+   Compatible with Adobe Premiere Pro & Adobe After Effects
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Apple Dark Palette ────────────────────────────────────────────────── */
+  --bg-base:          #161618;
+  --bg-surface:       #1c1c1f;
+  --bg-card:          rgba(255, 255, 255, 0.04);
+  --bg-card-hover:    rgba(255, 255, 255, 0.075);
+  --bg-card-active:   rgba(10, 132, 255, 0.12);
+  --bg-elevated:      rgba(30, 30, 34, 0.85);
+  --bg-dock:          rgba(24, 24, 28, 0.92);
+  --bg-modal:         #1e1e22;
+  --bg-input:         rgba(255, 255, 255, 0.05);
+  --bg-input-focus:   rgba(255, 255, 255, 0.08);
+
+  /* ── Borders & Glassmorphism ───────────────────────────────────────────── */
+  --border:           rgba(255, 255, 255, 0.08);
+  --border-subtle:    rgba(255, 255, 255, 0.04);
+  --border-card:      rgba(255, 255, 255, 0.06);
+  --border-focus:     #0a84ff;
+  --border-hover:     rgba(255, 255, 255, 0.15);
+
+  /* ── Typography & Text ─────────────────────────────────────────────────── */
+  --text-primary:     #f5f5f7;
+  --text-secondary:   #98989f;
+  --text-muted:       #636366;
+  --text-dim:         #48484a;
+
+  /* ── Apple Dynamic Accents ─────────────────────────────────────────────── */
+  --accent-blue:      #0a84ff;
+  --accent-blue-glow: rgba(10, 132, 255, 0.25);
+  --accent-indigo:    #5e5ce6;
+  --accent-audio:     #30d158;
+  --accent-audio-dim: rgba(48, 209, 88, 0.15);
+  --accent-video:     #0a84ff;
+  --accent-video-dim: rgba(10, 132, 255, 0.15);
+  --accent-fx:        #bf5af2;
+  --accent-fx-dim:    rgba(191, 90, 242, 0.15);
+  --accent-fav:       #ff375f;
+  --accent-fav-dim:   rgba(255, 55, 95, 0.15);
+  --accent-amber:     #ff9f0a;
+
+  /* ── Geometry & Rounding ───────────────────────────────────────────────── */
+  --radius-xs:        4px;
+  --radius-sm:        6px;
+  --radius-md:        10px;
+  --radius-lg:        14px;
+  --radius-xl:        18px;
+  --radius-pill:      9999px;
+
+  /* ── Spacing & Layout ──────────────────────────────────────────────────── */
+  --header-h:         38px;
+  --control-strip-h:  74px;
+  --status-h:         22px;
+  --font-sans:        "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --font-mono:        "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* ── Motion & Springs ──────────────────────────────────────────────────── */
+  --ease-apple:       cubic-bezier(0.2, 0.9, 0.3, 1);
+  --dur-quick:        120ms;
+  --dur-smooth:       220ms;
+  --shadow-sm:        0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md:        0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg:        0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-glow:      0 0 16px var(--accent-blue-glow);
+}
+
+/* ── Reset & Global ───────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.03) 0%, transparent 60%), var(--bg-base);
+}
+
+/* ── Modern Apple Scrollbars ─────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Header Toolbar (macOS Style) ────────────────────────────────────────── */
+.app-header {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  background: var(--bg-elevated);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.brand-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-indigo) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(10, 132, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--text-primary);
+}
+
+.host-pill {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Apple Action Buttons ─────────────────────────────────────────────────── */
+.apple-icon-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--dur-quick) var(--ease-apple);
+}
+.apple-icon-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-0.5px);
+}
+.apple-icon-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(0.5px) scale(0.96);
+}
+.apple-icon-btn.small {
+  width: 20px;
+  height: 20px;
+}
+
+.apple-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--dur-quick) var(--ease-apple);
+}
+.apple-btn-subtle {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+.apple-btn-subtle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--border);
+  color: #ffffff;
+}
+
+.apple-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: var(--accent-blue);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.3);
+  transition: all var(--dur-quick) var(--ease-apple);
+}
+.apple-btn-primary:hover {
+  background: #2191ff;
+  box-shadow: 0 3px 12px rgba(10, 132, 255, 0.45);
+  transform: translateY(-0.5px);
+}
+.apple-btn-primary:active {
+  transform: translateY(0.5px) scale(0.98);
+}
+.apple-btn-primary.full-width {
+  width: 100%;
+}
+
+.apple-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--dur-quick) var(--ease-apple);
+}
+.apple-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* ── Control Strip (Search + Apple Segmented Control) ────────────────────── */
+.control-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 10px 8px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Spotlight Search Wrap */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 28px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 6px 0 26px;
+  transition: all var(--dur-quick) var(--ease-apple);
+}
+.search-wrap:focus-within {
+  background: var(--bg-input-focus);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2);
+}
+
+.search-icon {
+  position: absolute;
+  left: 8px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+#search-input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 11px;
+}
+#search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.clear-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--text-secondary);
+  border-radius: var(--radius-pill);
+  width: 15px;
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--dur-quick);
+}
+.clear-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Apple Segmented Control Tabs */
+.segmented-control {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.seg-btn {
+  flex: 1;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 500;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: all var(--dur-quick) var(--ease-apple);
+}
+.seg-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+.seg-btn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Split Layout Container ─────────────────────────────────────────────── */
+.main-split-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Sidebar (macOS Finder / Notion Page Tree) ───────────────────────────── */
+.sidebar-panel {
+  width: 175px;
+  min-width: 175px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex-shrink: 0;
+  transition: width var(--dur-smooth) var(--ease-apple), min-width var(--dur-smooth) var(--ease-apple), opacity var(--dur-smooth) var(--ease-apple);
+}
+.sidebar-panel.collapsed {
+  width: 0px !important;
+  min-width: 0px !important;
+  opacity: 0;
+  border-right: none;
+}
+
+.sidebar-resizer {
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  transition: background var(--dur-quick);
+  z-index: 10;
+  flex-shrink: 0;
+  position: relative;
+}
+.sidebar-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 1px;
+  width: 1px;
+  background: var(--border-subtle);
+}
+.sidebar-resizer:hover::after,
+.sidebar-resizer.active::after {
+  background: var(--accent-blue);
+  width: 2px;
+}
+.sidebar-panel.collapsed + .sidebar-resizer {
+  display: none;
+}
+
+.tree-header {
+  padding: 8px 10px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tree-header-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.tree-header-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tree-header-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.folder-tree {
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Tree Rows */
+.tree-node {
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 6px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  gap: 5px;
+  transition: all var(--dur-quick) var(--ease-apple);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+.tree-row.active {
+  background: var(--bg-card-active);
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+.tree-indent {
+  width: 10px;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.tree-toggle {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 8px;
+  border-radius: 2px;
+  transition: transform var(--dur-quick);
+}
+.tree-toggle:hover {
+  color: #ffffff;
+}
+.tree-toggle.empty {
+  visibility: hidden;
+}
+
+.tree-icon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.tree-row.active .tree-icon {
+  color: var(--accent-blue);
+}
+
+.tree-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-children {
+  display: none;
+  flex-direction: column;
+  gap: 1px;
+}
+.tree-children.expanded {
+  display: flex;
+}
+
+/* ── Content Area & Empty State ───────────────────────────────────────────── */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  position: relative;
+  background: var(--bg-base);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 24px;
+  text-align: center;
+  height: 100%;
+}
+.empty-graphic {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-blue);
+  margin-bottom: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+.empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+.empty-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 280px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+.apple-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── File Grid (Apple Squircle Cards) ────────────────────────────────────── */
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+.file-grid.list-view {
+  grid-template-columns: 1fr;
+  gap: 3px;
+}
+
+/* Card Root */
+.file-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--dur-quick) var(--ease-apple);
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(10px);
+}
+.file-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.file-card.active {
+  background: var(--bg-card-active);
+  border-color: var(--border-focus) !important;
+  box-shadow: 0 0 0 1px var(--border-focus), 0 4px 16px rgba(10, 132, 255, 0.25);
+}
+
+/* Card Thumbnail Area */
+.card-thumb {
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.2) 100%);
+}
+
+.type-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur-quick) var(--ease-apple), opacity var(--dur-quick);
+  opacity: 0.85;
+}
+.file-card:hover .type-icon {
+  transform: scale(1.06);
+  opacity: 1;
+}
+
+/* Card Hover Quick Action Glass Overlay */
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(18, 18, 22, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity var(--dur-quick) var(--ease-apple);
+}
+.file-card:hover .card-overlay {
+  opacity: 1;
+}
+
+.overlay-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--dur-quick) var(--ease-apple);
+}
+.overlay-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: scale(1.08);
+}
+.overlay-btn.play-overlay {
+  background: var(--accent-blue);
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.4);
+}
+.overlay-btn.play-overlay:hover {
+  background: #2191ff;
+}
+
+/* Card Favorite Star Button */
+.card-fav {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--dur-quick) var(--ease-apple);
+}
+.file-card:hover .card-fav,
+.card-fav.is-fav {
+  opacity: 1;
+}
+.card-fav.is-fav {
+  color: var(--accent-fav);
+  background: var(--accent-fav-dim);
+}
+
+/* Card Metadata Block */
+.card-info {
+  padding: 6px 8px 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.015);
+}
+.card-name {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.1px;
+}
+.card-meta {
+  font-size: 9px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Extension Pills */
+.card-ext-badge {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+}
+.badge-audio {
+  background: var(--accent-audio-dim);
+  color: var(--accent-audio);
+}
+.badge-video {
+  background: var(--accent-video-dim);
+  color: var(--accent-video);
+}
+.badge-fx {
+  background: var(--accent-fx-dim);
+  color: var(--accent-fx);
+}
+
+/* ── List View Representation ─────────────────────────────────────────────── */
+.file-grid.list-view .file-card {
+  flex-direction: row;
+  align-items: center;
+  padding: 4px 8px;
+  gap: 8px;
+  min-height: 32px;
+}
+.file-grid.list-view .card-thumb {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+  background: transparent;
+}
+.file-grid.list-view .card-thumb svg {
+  width: 14px;
+  height: 14px;
+}
+.file-grid.list-view .card-overlay {
+  display: none;
+}
+.file-grid.list-view .card-info {
+  flex: 1;
+  padding: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  border-top: none;
+  background: transparent;
+  overflow: hidden;
+}
+.file-grid.list-view .card-name {
+  flex: 1;
+}
+.file-grid.list-view .card-fav {
+  position: static;
+  opacity: 0.4;
+}
+.file-grid.list-view:hover .card-fav {
+  opacity: 1;
+}
+
+/* ── Status Bar Footer ────────────────────────────────────────────────────── */
+.status-bar {
+  height: var(--status-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+.status-left, .status-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.seq-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.seq-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-audio);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(48, 209, 88, 0.6);
+}
+
+/* ── Apple Music-Style Docked Preview Player ─────────────────────────────── */
+.preview-player {
+  background: var(--bg-dock);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  transition: all var(--dur-smooth) var(--ease-apple);
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+  z-index: 30;
+}
+.preview-player.collapsed {
+  max-height: 0 !important;
+  height: 0px !important;
+  opacity: 0;
+  border-top: none;
+  box-shadow: none;
+}
+.preview-player.open-audio,
+.preview-player.open-video {
+  overflow: visible;
+}
+
+.player-drag-handle {
+  height: 8px;
+  width: 100%;
+  cursor: row-resize;
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+.player-drag-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 3px;
+  width: 32px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.15);
+  transition: background var(--dur-quick);
+}
+.player-drag-handle:hover::after,
+.player-drag-handle.active::after {
+  background: var(--accent-blue);
+}
+
+.player-inner {
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.player-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.player-meta-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.player-artwork {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.audio-art {
+  background: var(--accent-audio-dim);
+  color: var(--accent-audio);
+}
+.video-art {
+  background: var(--accent-video-dim);
+  color: var(--accent-video);
+}
+
+.player-titles {
+  min-width: 0;
+  flex: 1;
+}
+.player-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-subtitle {
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+
+/* Player Center Transport Controls */
+.player-center-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ctrl-btn-round {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--dur-quick) var(--ease-apple);
+}
+.ctrl-btn-round:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.play-btn-apple {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-blue);
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.4);
+  transition: all var(--dur-quick) var(--ease-apple);
+}
+.play-btn-apple:hover {
+  background: #2191ff;
+  transform: scale(1.06);
+}
+.play-btn-apple:active {
+  transform: scale(0.96);
+}
+
+.time-display {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  min-width: 65px;
+  text-align: center;
+}
+
+.player-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vol-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+}
+.apple-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 50px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-pill);
+  outline: none;
+  cursor: pointer;
+}
+.apple-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-pill);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+/* Audio Waveform Canvas */
+.waveform-canvas {
+  width: 100%;
+  height: 34px;
+  display: block;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+
+/* Progress Scrubber */
+.progress-wrap {
+  padding: 2px 0 0;
+}
+.progress-bar {
+  position: relative;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: var(--accent-blue);
+  border-radius: var(--radius-pill);
+  pointer-events: none;
+  width: 0%;
+}
+.video-fill {
+  background: var(--accent-video);
+}
+.progress-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-quick);
+}
+.progress-bar:hover .progress-thumb {
+  opacity: 1;
+}
+
+/* Video Wrapper */
+.video-container-wrap {
+  position: relative;
+  background: #000000;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  max-height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#video-element {
+  max-width: 100%;
+  max-height: 130px;
+}
+.video-overlay-play {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity var(--dur-quick);
+}
+.video-overlay-play.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Apple Sheet Modal (Folder Manager) ──────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-sheet {
+  background: var(--bg-modal);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scaleUp 0.22s var(--ease-apple);
+}
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-icon-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-blue-glow);
+  color: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-header h3 {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+.modal-sub {
+  font-size: 9.5px;
+  color: var(--text-secondary);
+}
+
+.modal-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.folder-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.apple-text-input {
+  flex: 1;
+  height: 28px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 11px;
+  outline: none;
+  transition: all var(--dur-quick);
+}
+.apple-text-input:focus {
+  background: var(--bg-input-focus);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2);
+}
+
+.folder-section-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.folder-list-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.folder-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  transition: all var(--dur-quick);
+}
+.folder-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border);
+}
+.folder-item-icon {
+  color: var(--accent-blue);
+  flex-shrink: 0;
+}
+.folder-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.folder-item-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.folder-item-path {
+  font-size: 9px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.folder-item-count {
+  font-size: 8.5px;
+  color: var(--text-secondary);
+}
+.btn-remove-folder {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--dur-quick);
+}
+.btn-remove-folder:hover {
+  color: var(--accent-fav);
+  background: var(--accent-fav-dim);
+}
+
+.modal-footer {
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Apple Context Menus ──────────────────────────────────────────────────── */
+.apple-context-menu {
+  position: fixed;
+  z-index: 200;
+  background: rgba(28, 28, 32, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  min-width: 170px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--dur-quick);
+}
+.ctx-item:hover {
+  background: var(--accent-blue);
+  color: #ffffff;
+}
+.ctx-item.danger:hover {
+  background: var(--accent-fav);
+  color: #ffffff;
+}
+.ctx-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 3px 0;
+}
+
+/* ── Apple Toast Notification ────────────────────────────────────────────── */
+.apple-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(24, 24, 28, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: var(--shadow-md);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: toastPop 0.25s var(--ease-apple);
+}
+@keyframes toastPop {
+  from { transform: translate(-50%, 8px) scale(0.95); opacity: 0; }
+  to { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
+.apple-toast.toast-success {
+  border-color: rgba(48, 209, 88, 0.4);
+}
+.apple-toast.toast-error {
+  border-color: rgba(255, 55, 95, 0.4);
+}

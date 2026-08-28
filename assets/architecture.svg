@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <linearGradient id="panelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c1c20" />
+      <stop offset="100%" stop-color="#121215" />
+    </linearGradient>
+    <linearGradient id="blueLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0a84ff" />
+      <stop offset="100%" stop-color="#30d158" />
+    </linearGradient>
+  </defs>
+
+  <rect width="960" height="440" rx="16" fill="#0d0d10" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" />
+
+  <!-- Section 1: Presentation Layer (Chromium CEP Client) -->
+  <g transform="translate(30, 40)">
+    <rect width="260" height="360" rx="12" fill="url(#panelGrad)" stroke="rgba(10, 132, 255, 0.4)" stroke-width="1.5" />
+    <rect x="0" y="0" width="260" height="36" rx="12" fill="rgba(10, 132, 255, 0.15)" />
+    <text x="130" y="24" fill="#64d2ff" font-family="-apple-system, sans-serif" font-size="13" font-weight="700" text-anchor="middle">🎨 CLIENT LAYER (Chromium CEF)</text>
+
+    <g transform="translate(15, 52)">
+      <rect width="230" height="46" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
+      <text x="12" y="22" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="11.5" font-weight="600">Spotlight &amp; Segmented Tabs</text>
+      <text x="12" y="38" fill="#86868b" font-family="-apple-system, sans-serif" font-size="9.5">Reactive filtering &amp; view switcher</text>
+    </g>
+
+    <g transform="translate(15, 110)">
+      <rect width="230" height="46" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
+      <text x="12" y="22" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="11.5" font-weight="600">Finder Sidebar Tree</text>
+      <text x="12" y="38" fill="#86868b" font-family="-apple-system, sans-serif" font-size="9.5">Directory hierarchy &amp; count badges</text>
+    </g>
+
+    <g transform="translate(15, 168)">
+      <rect width="230" height="46" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
+      <text x="12" y="22" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="11.5" font-weight="600">Squircle Media Cards</text>
+      <text x="12" y="38" fill="#86868b" font-family="-apple-system, sans-serif" font-size="9.5">Drag-and-drop &amp; hover quick actions</text>
+    </g>
+
+    <g transform="translate(15, 226)">
+      <rect width="230" height="46" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
+      <text x="12" y="22" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="11.5" font-weight="600">Docked Preview Player</text>
+      <text x="12" y="38" fill="#86868b" font-family="-apple-system, sans-serif" font-size="9.5">Web Audio API real-time waveforms</text>
+    </g>
+
+    <g transform="translate(15, 284)">
+      <rect width="230" height="52" rx="8" fill="rgba(10, 132, 255, 0.08)" stroke="rgba(10, 132, 255, 0.25)" />
+      <text x="12" y="24" fill="#64d2ff" font-family="-apple-system, sans-serif" font-size="11.5" font-weight="700">CSInterface Bridge</text>
+      <text x="12" y="40" fill="#a1a1a6" font-family="-apple-system, sans-serif" font-size="9.5">evalScript() async RPC engine</text>
+    </g>
+  </g>
+
+  <!-- Arrow 1 -->
+  <g transform="translate(305, 220)">
+    <line x1="0" y1="0" x2="35" y2="0" stroke="url(#blueLine)" stroke-width="2.5" />
+    <polygon points="35,-5 45,0 35,5" fill="#30d158" />
+  </g>
+
+  <!-- Section 2: Storage & Sync Engine -->
+  <g transform="translate(365, 40)">
+    <rect width="230" height="360" rx="12" fill="url(#panelGrad)" stroke="rgba(48, 209, 88, 0.4)" stroke-width="1.5" />
+    <rect x="0" y="0" width="230" height="36" rx="12" fill="rgba(48, 209, 88, 0.15)" />
+    <text x="115" y="24" fill="#30d158" font-family="-apple-system, sans-serif" font-size="13" font-weight="700" text-anchor="middle">💾 MULTI-TIER PERSISTENCE</text>
+
+    <g transform="translate(15, 56)">
+      <rect width="200" height="74" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(48, 209, 88, 0.2)" />
+      <text x="12" y="22" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="11" font-weight="700">1. ExtendScript Local Disk</text>
+      <text x="12" y="38" fill="#86868b" font-family="monospace" font-size="9">Folder.userData/</text>
+      <text x="12" y="52" fill="#86868b" font-family="monospace" font-size="9">MyMediaLibrary/settings.json</text>
+      <text x="12" y="66" fill="#30d158" font-family="-apple-system, sans-serif" font-size="8.5">✓ 100% Cross-Session Permanent</text>
+    </g>
+
+    <g transform="translate(15, 146)">
+      <rect width="200" height="70" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
+      <text x="12" y="22" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="11" font-weight="700">2. Node.js Local File I/O</text>
+      <text x="12" y="38" fill="#86868b" font-family="monospace" font-size="9">%APPDATA%/MyMediaLibrary</text>
+      <text x="12" y="54" fill="#a1a1a6" font-family="-apple-system, sans-serif" font-size="8.5">Synchronous fallback reader</text>
+    </g>
+
+    <g transform="translate(15, 232)">
+      <rect width="200" height="70" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
+      <text x="12" y="22" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="11" font-weight="700">3. LocalStorage Cache</text>
+      <text x="12" y="38" fill="#86868b" font-family="monospace" font-size="9">localStorage.setItem()</text>
+      <text x="12" y="54" fill="#a1a1a6" font-family="-apple-system, sans-serif" font-size="8.5">Instant in-session memory</text>
+    </g>
+  </g>
+
+  <!-- Arrow 2 -->
+  <g transform="translate(610, 220)">
+    <line x1="0" y1="0" x2="35" y2="0" stroke="url(#blueLine)" stroke-width="2.5" />
+    <polygon points="35,-5 45,0 35,5" fill="#30d158" />
+  </g>
+
+  <!-- Section 3: Adobe Host Applications -->
+  <g transform="translate(670, 40)">
+    <rect width="260" height="360" rx="12" fill="url(#panelGrad)" stroke="rgba(191, 90, 242, 0.4)" stroke-width="1.5" />
+    <rect x="0" y="0" width="260" height="36" rx="12" fill="rgba(191, 90, 242, 0.15)" />
+    <text x="130" y="24" fill="#d4bbff" font-family="-apple-system, sans-serif" font-size="13" font-weight="700" text-anchor="middle">🎬 DUAL HOST (ExtendScript JSX)</text>
+
+    <!-- Premiere Card -->
+    <g transform="translate(15, 54)">
+      <rect width="230" height="136" rx="8" fill="rgba(0,0,91,0.25)" stroke="#9999ff" stroke-width="1" />
+      <text x="14" y="26" fill="#9999ff" font-family="-apple-system, sans-serif" font-size="14" font-weight="800">Adobe Premiere Pro (PPRO)</text>
+      <text x="14" y="50" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="10.5">▪ Sequence Timeline Insertion</text>
+      <text x="14" y="68" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="10.5">▪ Project Bin Import</text>
+      <text x="14" y="86" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="10.5">▪ MOGRT / LUT Engine</text>
+      <text x="14" y="104" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="10.5">▪ Active Sequence Polling</text>
+    </g>
+
+    <!-- After Effects Card -->
+    <g transform="translate(15, 204)">
+      <rect width="230" height="136" rx="8" fill="rgba(45,0,77,0.25)" stroke="#d985ff" stroke-width="1" />
+      <text x="14" y="26" fill="#d985ff" font-family="-apple-system, sans-serif" font-size="14" font-weight="800">Adobe After Effects (AEFT)</text>
+      <text x="14" y="50" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="10.5">▪ Comp Layer Add at Current Time</text>
+      <text x="14" y="68" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="10.5">▪ Footage ImportOptions</text>
+      <text x="14" y="86" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="10.5">▪ FFX / AEP Preset Insertion</text>
+      <text x="14" y="104" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="10.5">▪ Active Composition Polling</text>
+    </g>
+  </g>
+</svg>
