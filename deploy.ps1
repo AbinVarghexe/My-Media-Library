@@ -20,13 +20,20 @@ if ($apps) {
     Write-Host "If files fail to copy, please close the host apps and re-run deploy." -ForegroundColor Yellow
 }
 
+$deployItems = @("CSXS", "client", "host", "assets", ".debug", "README.md", "LICENSE", "install.bat", "install.ps1")
+
 function Copy-Extension($srcPath, $destPath) {
     if ($srcPath -eq $destPath) { return }
     Write-Host "Syncing to $destPath..." -ForegroundColor Yellow
     if (!(Test-Path $destPath)) {
         New-Item -ItemType Directory -Force -Path $destPath | Out-Null
     }
-    Copy-Item -Path "$srcPath\*" -Destination $destPath -Recurse -Force -Exclude "deploy.ps1"
+    foreach ($item in $deployItems) {
+        $srcItem = "$srcPath\$item"
+        if (Test-Path $srcItem) {
+            Copy-Item -Path $srcItem -Destination "$destPath\$item" -Recurse -Force
+        }
+    }
     if (Test-Path "$destPath\CSXS\manifest.xml") {
         Write-Host "Successfully deployed to $destPath" -ForegroundColor Green
     } else {
@@ -39,4 +46,5 @@ Copy-Extension $currentDir $dest64
 Copy-Extension $currentDir $dest32
 
 Write-Host "Deployment finished!" -ForegroundColor Green
+
 

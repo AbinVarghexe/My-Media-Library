@@ -67,25 +67,57 @@ function getHostApp() {
 // ─── Permanent Disk Settings Storage ────────────────────────────────────────
 
 /**
- * Save settings JSON directly to user's AppData disk storage.
- * Ensures folders and configuration are remembered forever across all sessions and hosts.
+ * Resolve the persistent settings file across all Adobe apps and OS platforms.
+ * Always resolves to:
+ * - Windows: C:/Users/<User>/AppData/Roaming/MyMediaLibrary/settings.json
+ * - macOS:   ~/Library/Application Support/MyMediaLibrary/settings.json
  */
-function saveSettingsToDisk(settingsJsonStr) {
+function getSettingsFile() {
+    var baseDir = null;
     try {
-        var baseDir = Folder.userData;
-        if (!baseDir.exists) {
-            baseDir = Folder.myDocuments;
+        var home = Folder("~");
+        if (home && home.exists) {
+            var isWin = ($.os && $.os.indexOf("Windows") !== -1);
+            var appDataPath = isWin
+                ? (home.fsName + "/AppData/Roaming/MyMediaLibrary")
+                : (home.fsName + "/Library/Application Support/MyMediaLibrary");
+            baseDir = new Folder(appDataPath);
+            if (!baseDir.exists) baseDir.create();
+            if (baseDir.exists) return new File(baseDir.fsName + "/settings.json");
         }
-        var mmlFolder = new Folder(baseDir.fsName + "/MyMediaLibrary");
-        if (!mmlFolder.exists) {
-            mmlFolder.create();
+    } catch (e) {}
+
+    try {
+        if (Folder.userData && Folder.userData.exists) {
+            baseDir = new Folder(Folder.userData.fsName + "/MyMediaLibrary");
+            if (!baseDir.exists) baseDir.create();
+            if (baseDir.exists) return new File(baseDir.fsName + "/settings.json");
         }
-        var settingsFile = new File(mmlFolder.fsName + "/settings.json");
-        settingsFile.encoding = "UTF-8";
-        if (settingsFile.open("w")) {
-            settingsFile.write(settingsJsonStr);
-            settingsFile.close();
-            return MML_JSON.stringify({ success: true, path: settingsFile.fsName });
+    } catch (e) {}
+
+    try {
+        if (Folder.myDocuments && Folder.myDocuments.exists) {
+            baseDir = new Folder(Folder.myDocuments.fsName + "/MyMediaLibrary");
+            if (!baseDir.exists) baseDir.create();
+            if (baseDir.exists) return new File(baseDir.fsName + "/settings.json");
+        }
+    } catch (e) {}
+
+    return new File(Folder.temp.fsName + "/mml_settings.json");
+}
+
+/**
+ * Save settings directly to persistent disk storage.
+ * @param {string} rawOrEncodedStr - JSON string or URI-encoded JSON string
+ */
+function saveSettingsToDisk(rawOrEncodedStr) {
+    try {
+        var file = getSettingsFile();
+        file.encoding = "UTF-8";
+        if (file.open("w")) {
+            file.write(rawOrEncodedStr);
+            file.close();
+            return MML_JSON.stringify({ success: true, path: file.fsName.replace(/\\/g, '/') });
         } else {
             return MML_JSON.stringify({ success: false, error: "Cannot open file for writing" });
         }
@@ -95,22 +127,25 @@ function saveSettingsToDisk(settingsJsonStr) {
 }
 
 /**
- * Load settings JSON from user's AppData disk storage.
+ * Load settings from persistent disk storage.
  */
 function loadSettingsFromDisk() {
     try {
-        var baseDir = Folder.userData;
-        if (!baseDir.exists) {
-            baseDir = Folder.myDocuments;
+        var file = getSettingsFile();
+        if (!file.exists) {
+            // Check fallback legacy locations if present
+            try {
+                var legacy = new File(Folder.userData.fsName + "/MyMediaLibrary/settings.json");
+                if (legacy.exists) file = legacy;
+            } catch (e) {}
         }
-        var settingsFile = new File(baseDir.fsName + "/MyMediaLibrary/settings.json");
-        if (!settingsFile.exists) {
+        if (!file.exists) {
             return MML_JSON.stringify({ success: false, error: "Settings file not found" });
         }
-        settingsFile.encoding = "UTF-8";
-        if (settingsFile.open("r")) {
-            var content = settingsFile.read();
-            settingsFile.close();
+        file.encoding = "UTF-8";
+        if (file.open("r")) {
+            var content = file.read();
+            file.close();
             return MML_JSON.stringify({ success: true, data: content });
         } else {
             return MML_JSON.stringify({ success: false, error: "Cannot open file for reading" });
@@ -126,20 +161,20 @@ function loadSettingsFromDisk() {
  * Recursively scan a folder and return all files as a JSON array.
  * @param {string} folderPath - Absolute OS path to the folder
  * @param {number} maxDepth   - Max recursion depth (default: 4)
- * @returns {string} JSON string: { files: [{name, path, ext, size, parentFolder}] } | { error }
+ * @returns {string} JSON string: { success: true, files: [{name, path, ext, size, parentFolder}] }
  */
 function getFolderContents(folderPath, maxDepth) {
     try {
         maxDepth = (typeof maxDepth === 'number') ? maxDepth : 4;
         var folder = new Folder(folderPath);
         if (!folder.exists) {
-            return MML_JSON.stringify({ error: 'Folder not found: ' + folderPath });
+            return MML_JSON.stringify({ success: false, error: 'Folder not found: ' + folderPath, files: [] });
         }
         var files = [];
         _scanFolder(folder, files, 0, maxDepth);
-        return MML_JSON.stringify({ files: files });
+        return MML_JSON.stringify({ success: true, files: files });
     } catch (e) {
-        return MML_JSON.stringify({ error: 'ExtendScript scan error: ' + e.message });
+        return MML_JSON.stringify({ success: false, error: 'ExtendScript scan error: ' + e.message, files: [] });
     }
 }
 
@@ -152,6 +187,8 @@ function _scanFolder(folder, files, depth, maxDepth) {
         return; 
     }
     if (!items) return;
+
+    var normParent = folder.fsName.replace(/\\/g, '/');
 
     for (var i = 0; i < items.length; i++) {
         try {
@@ -169,10 +206,10 @@ function _scanFolder(folder, files, depth, maxDepth) {
                 var ext = (dotIdx > -1) ? name.substring(dotIdx + 1).toLowerCase() : '';
                 files.push({
                     name:         name,
-                    path:         item.fsName,
+                    path:         item.fsName.replace(/\\/g, '/'),
                     ext:          ext,
                     size:         item.length,
-                    parentFolder: folder.fsName,
+                    parentFolder: normParent,
                     folderName:   folder.name
                 });
             }

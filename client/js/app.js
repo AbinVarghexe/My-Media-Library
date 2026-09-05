@@ -10,6 +10,15 @@
 (function () {
 
   // ══════════════════════════════════════════════════════════════════════════
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  function normalizePath(p) {
+    if (!p) return '';
+    return String(p).replace(/\\/g, '/').replace(/\/+$/, '');
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
   // ── State ─────────────────────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
 
@@ -17,7 +26,7 @@
 
   var state = {
     host:             'UNKNOWN', // 'PPRO' | 'AEFT'
-    folders:          [],        // string[] — folder paths
+    folders:          [],        // string[] — normalized folder paths
     allFiles:         [],        // enriched file objects
     selectedFile:     null,      // currently selected file for preview
     byType:           { audio: [], video: [], fx: [] },
@@ -36,7 +45,6 @@
   };
 
   var STORAGE_KEYS = {
-    settingsDisk:     'MyMediaLibrary/settings.json',
     folders:          'mml_folders',
     favorites:        'mml_favorites',
     viewMode:         'mml_viewmode',
@@ -103,9 +111,37 @@
       cs.addEventListener("com.adobe.csxs.events.ThemeChanged", syncThemeWithHost);
     } catch (e) {}
 
-    // Evaluate ExtendScript host and initialize persistent storage
+    // 1. Instantly restore from localStorage so UI displays immediately
+    _loadFromLocalStorage();
+    if (state.folders.length > 0) {
+      _renderFolderTree();
+    }
+
+    // 2. Load disk storage & connect to ExtendScript host
     _loadHostAndSettings();
     _pollSequenceInfo();
+  }
+
+  function _loadFromLocalStorage() {
+    try {
+      var f = localStorage.getItem(STORAGE_KEYS.folders);
+      var foldersArr = f ? JSON.parse(f) : [];
+      if (foldersArr && foldersArr.length > 0) {
+        state.folders = foldersArr.map(normalizePath).filter(Boolean);
+      }
+      var fav = localStorage.getItem(STORAGE_KEYS.favorites);
+      if (fav) state.favorites = JSON.parse(fav);
+      var vm = localStorage.getItem(STORAGE_KEYS.viewMode);
+      if (vm) state.viewMode = vm;
+      var exp = localStorage.getItem(STORAGE_KEYS.expandedFolders);
+      if (exp) state.expandedFolders = JSON.parse(exp);
+      var side = localStorage.getItem(STORAGE_KEYS.sidebarCollapsed);
+      if (side !== null) state.sidebarCollapsed = side === 'true';
+      var act = localStorage.getItem(STORAGE_KEYS.activeFolder);
+      if (act) state.activeFolder = normalizePath(act);
+    } catch (e) {
+      console.warn("LocalStorage read error:", e);
+    }
   }
 
   function _loadHostAndSettings() {
@@ -113,25 +149,18 @@
       var extensionPath = cs.getSystemPath(SystemPath.EXTENSION).replace(/\\/g, '/');
       var jsxPath = extensionPath + "/host/index.jsx";
       cs.evalScript('$.evalFile(File("' + jsxPath.replace(/"/g, '\\"') + '"))', function () {
-        // Detect host app
-        cs.evalScript('getHostApp()', function (host) {
-          if (host && host !== 'EvalScript error.') {
-            state.host = host.replace(/"/g, '').trim();
-            if (dom.hostBadge) {
-              dom.hostBadge.textContent = (state.host === 'AEFT' ? 'After Effects' : 'Premiere Pro');
-            }
+        _detectHostApp();
+        _loadPersistentSettings(function () {
+          if (state.folders.length > 0) {
+            scanLibrary();
+          } else {
+            _showEmptyState();
           }
-          _loadPersistentSettings(function () {
-            if (state.folders.length > 0) {
-              scanLibrary();
-            } else {
-              _showEmptyState();
-            }
-          });
         });
       });
     } catch (e) {
       console.error("Host load error:", e);
+      _detectHostApp();
       _loadPersistentSettings(function () {
         if (state.folders.length > 0) {
           scanLibrary();
@@ -142,32 +171,54 @@
     }
   }
 
+  function _detectHostApp() {
+    try {
+      cs.evalScript('getHostApp()', function (host) {
+        if (host && host !== 'EvalScript error.') {
+          state.host = host.replace(/"/g, '').trim();
+          if (dom.hostBadge) {
+            dom.hostBadge.textContent = (state.host === 'AEFT' ? 'After Effects' : 'Premiere Pro');
+          }
+        }
+      });
+    } catch (e) {}
+  }
+
   // ══════════════════════════════════════════════════════════════════════════
   // ── Multi-Tier Permanent Storage (Fix for Session Wipe Bug) ───────────────
   // ══════════════════════════════════════════════════════════════════════════
 
   function _loadPersistentSettings(callback) {
-    // 1. Try loading from ExtendScript permanent disk file
+    // 1. Try loading from ExtendScript permanent disk storage
     cs.evalScript('loadSettingsFromDisk()', function (res) {
       var loadedFromDisk = false;
       try {
         if (res && res !== 'EvalScript error.') {
           var parsed = JSON.parse(res);
           if (parsed && parsed.success && parsed.data) {
-            var diskData = JSON.parse(parsed.data);
-            if (diskData) {
-              state.folders          = diskData.folders || [];
+            var rawData = parsed.data;
+            var jsonStr = rawData;
+            // Decode if URI-encoded or parse directly
+            try {
+              if (rawData.indexOf('%7B') === 0 || rawData.indexOf('%7b') === 0 || rawData.indexOf('%') !== -1) {
+                jsonStr = decodeURIComponent(rawData);
+              }
+            } catch (decErr) {}
+
+            var diskData = JSON.parse(jsonStr);
+            if (diskData && diskData.folders && diskData.folders.length > 0) {
+              state.folders          = diskData.folders.map(normalizePath).filter(Boolean);
               state.favorites        = diskData.favorites || {};
               state.viewMode         = diskData.viewMode || 'grid';
               state.expandedFolders  = diskData.expandedFolders || {};
               state.sidebarCollapsed = !!diskData.sidebarCollapsed;
-              state.activeFolder     = diskData.activeFolder || null;
+              state.activeFolder     = diskData.activeFolder ? normalizePath(diskData.activeFolder) : null;
               loadedFromDisk = true;
             }
           }
         }
       } catch (e) {
-        console.warn("Could not parse disk settings:", e);
+        console.warn("[Storage] ExtendScript disk read error:", e);
       }
 
       // 2. Node.js local storage fallback if ExtendScript disk file wasn't found
@@ -181,42 +232,29 @@
             if (fs.existsSync(settingsFilePath)) {
               var raw = fs.readFileSync(settingsFilePath, 'utf8');
               var nodeData = JSON.parse(raw);
-              if (nodeData) {
-                state.folders          = nodeData.folders || [];
+              if (nodeData && nodeData.folders && nodeData.folders.length > 0) {
+                state.folders          = nodeData.folders.map(normalizePath).filter(Boolean);
                 state.favorites        = nodeData.favorites || {};
                 state.viewMode         = nodeData.viewMode || 'grid';
                 state.expandedFolders  = nodeData.expandedFolders || {};
                 state.sidebarCollapsed = !!nodeData.sidebarCollapsed;
-                state.activeFolder     = nodeData.activeFolder || null;
+                state.activeFolder     = nodeData.activeFolder ? normalizePath(nodeData.activeFolder) : null;
                 loadedFromDisk = true;
               }
             }
           }
         } catch (e) {
-          console.warn("Node.js settings read error:", e);
+          console.warn("[Storage] Node.js settings read error:", e);
         }
       }
 
-      // 3. Browser localStorage fallback & migration
-      if (!loadedFromDisk) {
-        try {
-          var f = localStorage.getItem(STORAGE_KEYS.folders);
-          state.folders   = f ? JSON.parse(f) : [];
-          var fav = localStorage.getItem(STORAGE_KEYS.favorites);
-          state.favorites = fav ? JSON.parse(fav) : {};
-          var vm  = localStorage.getItem(STORAGE_KEYS.viewMode);
-          state.viewMode  = vm || 'grid';
-          var exp = localStorage.getItem(STORAGE_KEYS.expandedFolders);
-          state.expandedFolders = exp ? JSON.parse(exp) : {};
-          var side = localStorage.getItem(STORAGE_KEYS.sidebarCollapsed);
-          state.sidebarCollapsed = side === 'true';
-          var actFolder = localStorage.getItem(STORAGE_KEYS.activeFolder);
-          state.activeFolder = actFolder || null;
-        } catch (e) {}
+      // 3. If loaded from disk, sync to localStorage; if not loaded from disk but localStorage had items, migrate to disk
+      if (loadedFromDisk) {
+        _syncToLocalStorage();
+      } else if (state.folders.length > 0) {
+        _saveAllSettings();
       }
 
-      // Save back to disk immediately to guarantee permanent persistence
-      _saveAllSettings();
       _restoreViewMode();
       _restoreSidebar();
 
@@ -224,20 +262,7 @@
     });
   }
 
-  function _saveAllSettings() {
-    var payload = {
-      folders:          state.folders,
-      favorites:        state.favorites,
-      viewMode:         state.viewMode,
-      expandedFolders:  state.expandedFolders,
-      sidebarCollapsed: state.sidebarCollapsed,
-      activeFolder:     state.activeFolder,
-      updatedAt:        new Date().toISOString()
-    };
-
-    var jsonString = JSON.stringify(payload);
-
-    // 1. Save to localStorage
+  function _syncToLocalStorage() {
     try {
       localStorage.setItem(STORAGE_KEYS.folders,          JSON.stringify(state.folders));
       localStorage.setItem(STORAGE_KEYS.favorites,        JSON.stringify(state.favorites));
@@ -245,16 +270,41 @@
       localStorage.setItem(STORAGE_KEYS.expandedFolders,  JSON.stringify(state.expandedFolders));
       localStorage.setItem(STORAGE_KEYS.sidebarCollapsed, state.sidebarCollapsed ? 'true' : 'false');
       if (state.activeFolder) {
-        localStorage.setItem(STORAGE_KEYS.activeFolder, state.activeFolder);
+        localStorage.setItem(STORAGE_KEYS.activeFolder, normalizePath(state.activeFolder));
       } else {
         localStorage.removeItem(STORAGE_KEYS.activeFolder);
       }
     } catch (e) {}
+  }
 
-    // 2. Save to ExtendScript Disk file (Permanent across all sessions/hosts)
+  function _saveAllSettings() {
+    // Deduplicate and normalize
+    var uniqueFolders = [];
+    state.folders.forEach(function (f) {
+      var n = normalizePath(f);
+      if (n && uniqueFolders.indexOf(n) === -1) uniqueFolders.push(n);
+    });
+    state.folders = uniqueFolders;
+
+    var payload = {
+      folders:          state.folders,
+      favorites:        state.favorites,
+      viewMode:         state.viewMode,
+      expandedFolders:  state.expandedFolders,
+      sidebarCollapsed: state.sidebarCollapsed,
+      activeFolder:     state.activeFolder ? normalizePath(state.activeFolder) : null,
+      updatedAt:        new Date().toISOString()
+    };
+
+    var jsonString = JSON.stringify(payload);
+
+    // 1. Save to localStorage
+    _syncToLocalStorage();
+
+    // 2. Save to ExtendScript Disk file (URI-encoded to prevent ANY quote/backslash escaping bug)
     try {
-      var escaped = jsonString.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-      cs.evalScript('saveSettingsToDisk("' + escaped + '")', function () {});
+      var encoded = encodeURIComponent(jsonString);
+      cs.evalScript('saveSettingsToDisk("' + encoded + '")', function () {});
     } catch (e) {}
 
     // 3. Save via Node.js fs if available
@@ -297,8 +347,9 @@
 
       // Auto-expand roots if not set
       state.folders.forEach(function (fp) {
-        if (state.expandedFolders[fp] === undefined) {
-          state.expandedFolders[fp] = true;
+        var n = normalizePath(fp);
+        if (state.expandedFolders[n] === undefined) {
+          state.expandedFolders[n] = true;
         }
       });
       _saveExpandedFolders();
@@ -351,8 +402,10 @@
 
     // Folder filter
     if (state.activeFolder) {
+      var actNorm = normalizePath(state.activeFolder);
       pool = pool.filter(function (f) {
-        return f.parentFolder === state.activeFolder || f.parentFolder.indexOf(state.activeFolder + '\\') === 0 || f.parentFolder.indexOf(state.activeFolder + '/') === 0;
+        var pNorm = normalizePath(f.parentFolder);
+        return pNorm === actNorm || pNorm.indexOf(actNorm + '/') === 0;
       });
     }
 
@@ -437,8 +490,9 @@
     // Drag & Drop to Timeline / Project for Premiere Pro and After Effects
     el.setAttribute('draggable', 'true');
     el.addEventListener('dragstart', function (e) {
-      e.dataTransfer.setData('com.adobe.cep.dnd.file.0', file.path);
-      e.dataTransfer.setData('text/plain', file.path);
+      var nativePath = file.path.replace(/\//g, '\\');
+      e.dataTransfer.setData('com.adobe.cep.dnd.file.0', nativePath);
+      e.dataTransfer.setData('text/plain', nativePath);
 
       // Create a clean Apple-style drag preview pill
       var dragGhost = document.createElement('div');
@@ -516,8 +570,8 @@
   // ══════════════════════════════════════════════════════════════════════════
 
   function _importToProject(file) {
-    var escapedPath = file.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    var script = "importFilesToProject('" + escapedPath + "')";
+    var safePath = file.path.replace(/'/g, "\\'");
+    var script = "importFilesToProject('" + safePath + "')";
     cs.evalScript(script, function (result) {
       try {
         var r = JSON.parse(result);
@@ -528,8 +582,8 @@
   }
 
   function _importToTimeline(file) {
-    var escapedPath = file.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    var script = "importFileToTimeline('" + escapedPath + "')";
+    var safePath = file.path.replace(/'/g, "\\'");
+    var script = "importFileToTimeline('" + safePath + "')";
     cs.evalScript(script, function (result) {
       try {
         var r = JSON.parse(result);
@@ -544,8 +598,8 @@
   }
 
   function _revealInExplorer(file) {
-    var escapedPath = file.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    cs.evalScript("revealInExplorer('" + escapedPath + "')", function () {});
+    var safePath = file.path.replace(/'/g, "\\'");
+    cs.evalScript("revealInExplorer('" + safePath + "')", function () {});
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -582,7 +636,7 @@
         try {
           var extensionPath = cs.getSystemPath(SystemPath.EXTENSION).replace(/\\/g, '/');
           var jsxPath = extensionPath + "/host/index.jsx";
-          cs.evalScript('$.evalFile("' + jsxPath.replace(/"/g, '\\"') + '")', function () {
+          cs.evalScript('$.evalFile(File("' + jsxPath.replace(/"/g, '\\"') + '"))', function () {
             cs.evalScript('selectLocalFolder()', function (retryResult) {
               _handleSelectFolderResult(retryResult);
             });
@@ -600,10 +654,11 @@
     try {
       var r = JSON.parse(result);
       if (r && r.success && r.path) {
+        var norm = normalizePath(r.path);
         if (dom.folderInput && dom.folderModal.style.display !== 'none') {
-          dom.folderInput.value = r.path;
+          dom.folderInput.value = norm;
         } else {
-          _addFolder(r.path);
+          _addFolder(norm);
         }
       }
     } catch (e) {
@@ -612,9 +667,8 @@
   }
 
   function _addFolder(path) {
-    path = (path || '').trim();
+    path = normalizePath(path);
     if (!path) return;
-    path = path.replace(/\//g, '\\').replace(/\\+$/, '');
     if (state.folders.indexOf(path) !== -1) {
       showToast('Folder already in library', 1800);
       return;
@@ -628,26 +682,39 @@
   }
 
   function _removeFolder(path) {
+    path = normalizePath(path);
     if (!confirm("Remove this watch folder from your library?\n\n" + path)) {
       return;
     }
-    state.folders = state.folders.filter(function (f) { return f !== path; });
+    state.folders = state.folders.filter(function (f) { return normalizePath(f) !== path; });
     _saveFolders();
 
     // Clean up cache
-    state.allFiles = state.allFiles.filter(function (f) { return f.parentFolder !== path && f.parentFolder.indexOf(path + '\\') !== 0; });
-    state.byType.audio = state.byType.audio.filter(function (f) { return f.parentFolder !== path && f.parentFolder.indexOf(path + '\\') !== 0; });
-    state.byType.video = state.byType.video.filter(function (f) { return f.parentFolder !== path && f.parentFolder.indexOf(path + '\\') !== 0; });
-    state.byType.fx    = state.byType.fx.filter(function (f)    { return f.parentFolder !== path && f.parentFolder.indexOf(path + '\\') !== 0; });
+    state.allFiles = state.allFiles.filter(function (f) {
+      var pf = normalizePath(f.parentFolder);
+      return pf !== path && pf.indexOf(path + '/') !== 0;
+    });
+    state.byType.audio = state.byType.audio.filter(function (f) {
+      var pf = normalizePath(f.parentFolder);
+      return pf !== path && pf.indexOf(path + '/') !== 0;
+    });
+    state.byType.video = state.byType.video.filter(function (f) {
+      var pf = normalizePath(f.parentFolder);
+      return pf !== path && pf.indexOf(path + '/') !== 0;
+    });
+    state.byType.fx = state.byType.fx.filter(function (f) {
+      var pf = normalizePath(f.parentFolder);
+      return pf !== path && pf.indexOf(path + '/') !== 0;
+    });
     delete state.byFolder[path];
 
     delete state.expandedFolders[path];
     Object.keys(state.expandedFolders).forEach(function (k) {
-      if (k.indexOf(path + '\\') === 0) delete state.expandedFolders[k];
+      if (k.indexOf(path + '/') === 0) delete state.expandedFolders[k];
     });
     _saveExpandedFolders();
 
-    if (state.activeFolder && (state.activeFolder === path || state.activeFolder.indexOf(path + '\\') === 0)) {
+    if (state.activeFolder && (normalizePath(state.activeFolder) === path || normalizePath(state.activeFolder).indexOf(path + '/') === 0)) {
       state.activeFolder = null;
       _saveActiveFolder();
     }
@@ -664,8 +731,9 @@
       dom.folderList.innerHTML = '<p style="font-size:11px;color:var(--text-muted);padding:8px 0">No folders added yet.</p>';
       return;
     }
-    state.folders.forEach(function (fp) {
-      var parts    = fp.replace(/\\/g, '/').split('/');
+    state.folders.forEach(function (rawPath) {
+      var fp       = normalizePath(rawPath);
+      var parts    = fp.split('/');
       var name     = parts[parts.length - 1] || fp;
       var count    = state.byFolder[fp] ? state.byFolder[fp].length : '…';
       var el       = document.createElement('div');
@@ -716,7 +784,8 @@
     frag.appendChild(allRow);
 
     // Root nodes
-    state.folders.forEach(function (rootPath) {
+    state.folders.forEach(function (rawRoot) {
+      var rootPath = normalizePath(rawRoot);
       if (tree[rootPath]) {
         _renderTreeNode(tree[rootPath], 0, frag);
       }
@@ -727,8 +796,9 @@
 
   function _buildTreeData(watchedRoots, allFiles) {
     var tree = {};
-    watchedRoots.forEach(function (rootPath) {
-      var parts = rootPath.replace(/\//g, '\\').split('\\');
+    watchedRoots.forEach(function (rawRoot) {
+      var rootPath = normalizePath(rawRoot);
+      var parts = rootPath.split('/');
       var name = parts[parts.length - 1] || rootPath;
       tree[rootPath] = {
         path: rootPath,
@@ -739,10 +809,11 @@
     });
 
     allFiles.forEach(function (file) {
-      var parentPath = file.parentFolder;
+      var parentPath = normalizePath(file.parentFolder);
       var matchedRoot = null;
-      watchedRoots.forEach(function (root) {
-        if (parentPath === root || parentPath.indexOf(root + '\\') === 0) {
+      watchedRoots.forEach(function (rawRoot) {
+        var root = normalizePath(rawRoot);
+        if (parentPath === root || parentPath.indexOf(root + '/') === 0) {
           matchedRoot = root;
         }
       });
@@ -750,15 +821,15 @@
       if (!matchedRoot) return;
 
       var relPath = parentPath.substring(matchedRoot.length);
-      if (relPath.charAt(0) === '\\') relPath = relPath.substring(1);
+      if (relPath.charAt(0) === '/') relPath = relPath.substring(1);
       if (!relPath) return;
 
-      var segments = relPath.split('\\');
+      var segments = relPath.split('/');
       var current = tree[matchedRoot];
       var currentPath = matchedRoot;
 
       segments.forEach(function (segment) {
-        currentPath += '\\' + segment;
+        currentPath += '/' + segment;
         if (!current.children[segment]) {
           current.children[segment] = {
             path: currentPath,
@@ -779,7 +850,8 @@
     nodeEl.className = 'tree-node';
 
     var rowEl = document.createElement('div');
-    rowEl.className = 'tree-row' + (state.activeFolder === node.path ? ' active' : '');
+    var isCurrentActive = state.activeFolder && (normalizePath(state.activeFolder) === normalizePath(node.path));
+    rowEl.className = 'tree-row' + (isCurrentActive ? ' active' : '');
     
     // Indentation
     for (var i = 0; i < depth; i++) {
@@ -844,13 +916,14 @@
   }
 
   function _toggleFolderExpand(folderPath) {
-    state.expandedFolders[folderPath] = !state.expandedFolders[folderPath];
+    var norm = normalizePath(folderPath);
+    state.expandedFolders[norm] = !state.expandedFolders[norm];
     _saveExpandedFolders();
     _renderFolderTree();
   }
 
   function _selectFolder(folderPath) {
-    state.activeFolder = folderPath;
+    state.activeFolder = folderPath ? normalizePath(folderPath) : null;
     _saveActiveFolder();
     _renderFolderTree();
     _renderLibrary();
@@ -1142,8 +1215,8 @@
     });
     $('ctx-folder-reveal').addEventListener('click', function () {
       if (state.contextFolderNode) {
-        var escapedPath = state.contextFolderNode.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        cs.evalScript("revealFolder('" + escapedPath + "')", function () {});
+        var safePath = state.contextFolderNode.path.replace(/'/g, "\\'");
+        cs.evalScript("revealFolder('" + safePath + "')", function () {});
       }
       _hideFolderContextMenu();
     });

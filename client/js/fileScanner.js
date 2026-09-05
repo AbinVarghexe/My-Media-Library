@@ -31,6 +31,17 @@ var FileScanner = (function () {
    * @param {string[]}    folders   - Array of absolute folder paths
    * @param {Function}    callback  - Called with { allFiles, byType, byFolder }
    */
+  function normalizePath(p) {
+    if (!p) return '';
+    return p.replace(/\\/g, '/').replace(/\/+$/, '');
+  }
+
+  /**
+   * Scan multiple folder paths and return all files categorised by type.
+   * @param {CSInterface} cs        - CSInterface instance
+   * @param {string[]}    folders   - Array of absolute folder paths
+   * @param {Function}    callback  - Called with { allFiles, byType, byFolder }
+   */
   function scanFolders(cs, folders, callback) {
     if (!folders || folders.length === 0) {
       callback({ allFiles: [], byType: { audio: [], video: [], fx: [] }, byFolder: {} });
@@ -42,35 +53,30 @@ var FileScanner = (function () {
     var byFolder  = {};
 
     folders.forEach(function (folderPath) {
-      var script = 'getFolderContents(' + JSON.stringify(folderPath) + ', 4)';
+      var normRoot = normalizePath(folderPath);
+      var script = 'getFolderContents(' + JSON.stringify(normRoot) + ', 4)';
       cs.evalScript(script, function (result) {
         if (result === "EvalScript error.") {
-          if (typeof showToast === 'function') {
-            showToast('ExtendScript scanning error (function not found). Please restart panel.', 5000, 'error');
-          }
           remaining--;
+          byFolder[normRoot] = [];
           if (remaining === 0) { callback({ allFiles: allFiles, byType: groupByType(allFiles), byFolder: byFolder }); }
           return;
         }
         try {
           var parsed = JSON.parse(result);
-          if (parsed.error) {
-            if (typeof showToast === 'function') {
-              showToast('Folder error: ' + parsed.error, 5000, 'error');
-            }
-          } else if (parsed.files) {
+          if (parsed && parsed.files && parsed.files.length > 0) {
             var enriched = parsed.files.map(function (f) {
               return enrichFile(f);
             });
             var typed = enriched.filter(function (f) { return f.mediaType !== null; });
             allFiles = allFiles.concat(typed);
-            byFolder[folderPath] = typed;
+            byFolder[normRoot] = typed;
+          } else {
+            byFolder[normRoot] = [];
           }
         } catch (e) {
-          console.error('[FileScanner] Parse error for', folderPath, ':', e);
-          if (typeof showToast === 'function') {
-            showToast('Failed to parse folder contents: ' + e.message, 4000, 'error');
-          }
+          console.error('[FileScanner] Parse error for', normRoot, ':', e);
+          byFolder[normRoot] = [];
         }
 
         remaining--;
@@ -91,24 +97,26 @@ var FileScanner = (function () {
    * Determine a file's media type and add preview capability flags.
    */
   function enrichFile(fileObj) {
-    var ext      = (fileObj.ext || '').toLowerCase();
-    var type     = getMediaType(ext);
-    var canAudio = !!PREVIEWABLE_AUDIO[ext];
-    var canVideo = !!PREVIEWABLE_VIDEO[ext];
+    var ext        = (fileObj.ext || '').toLowerCase();
+    var type       = getMediaType(ext);
+    var canAudio   = !!PREVIEWABLE_AUDIO[ext];
+    var canVideo   = !!PREVIEWABLE_VIDEO[ext];
+    var normPath   = normalizePath(fileObj.path);
+    var normParent = normalizePath(fileObj.parentFolder);
 
     return {
       name:         fileObj.name,
-      path:         fileObj.path,
+      path:         normPath,
       ext:          ext,
       size:         fileObj.size || 0,
-      parentFolder: fileObj.parentFolder || '',
+      parentFolder: normParent,
       folderName:   fileObj.folderName || '',
       mediaType:    type,          // 'audio' | 'video' | 'fx' | null
       canPreview:   canAudio || canVideo || (type === 'fx'),
       canAudio:     canAudio,
       canVideo:     canVideo,
-      isFavorite:   false,         // set by app.js from localStorage
-      id:           buildId(fileObj.path)
+      isFavorite:   false,         // set by app.js from state.favorites
+      id:           buildId(normPath)
     };
   }
 
