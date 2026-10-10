@@ -331,6 +331,8 @@ var FileScanner = (function () {
     formatSize:   formatSize,
     getFXLabel:   getFXLabel,
     getTypeIcon:  getTypeIcon,
+    enrichFile:   enrichFile,
+    groupByType:  groupByType,
     getMediaType: function (ext) { return getMediaType(ext); }
   };
 

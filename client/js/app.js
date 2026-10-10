@@ -120,6 +120,15 @@
 
     // 1. Instantly restore from localStorage so UI displays immediately
     _loadFromLocalStorage();
+
+    // Instant Preload: If pre-indexed media files exist, hydrate immediately (0ms delay)
+    if (window.PRELOADED_FILES && window.PRELOADED_FILES.length > 0) {
+      if (state.folders.length === 0) {
+        state.folders = [normalizePath(DEFAULT_USER_FOLDER)];
+      }
+      _hydratePreloadedData(window.PRELOADED_FILES);
+    }
+
     if (state.folders.length > 0) {
       _renderFolderTree();
     }
@@ -127,6 +136,40 @@
     // 2. Load disk storage & connect to ExtendScript host
     _loadHostAndSettings();
     _pollSequenceInfo();
+  }
+
+  function _hydratePreloadedData(rawList) {
+    var enriched = rawList.map(function (f) {
+      var item = FileScanner.enrichFile(f);
+      item.isFavorite = !!state.favorites[item.id];
+      return item;
+    });
+
+    state.allFiles = enriched;
+    state.byType   = FileScanner.groupByType(enriched);
+
+    var byFolder = {};
+    state.folders.forEach(function (fp) {
+      byFolder[normalizePath(fp)] = [];
+    });
+    enriched.forEach(function (f) {
+      var p = normalizePath(f.parentFolder);
+      if (!byFolder[p]) byFolder[p] = [];
+      byFolder[p].push(f);
+    });
+    state.byFolder = byFolder;
+
+    // Ensure user default folder is expanded
+    state.folders.forEach(function (fp) {
+      var n = normalizePath(fp);
+      if (state.expandedFolders[n] === undefined) {
+        state.expandedFolders[n] = true;
+      }
+    });
+
+    _renderFolderTree();
+    _renderLibrary();
+    _updateFolderListModal();
   }
 
   function _loadFromLocalStorage() {
@@ -341,11 +384,15 @@
   // ── Library Scanning ──────────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
 
-  function scanLibrary() {
+  function scanLibrary(silent) {
     if (state.folders.length === 0) { _showEmptyState(); return; }
-    _showLoading();
-    if (dom.loadingStatus) {
-      dom.loadingStatus.textContent = 'Scanning media files…';
+
+    var isSilent = silent || (state.allFiles && state.allFiles.length > 0);
+    if (!isSilent) {
+      _showLoading();
+      if (dom.loadingStatus) {
+        dom.loadingStatus.textContent = 'Scanning media files…';
+      }
     }
 
     FileScanner.scanFolders(cs, state.folders, function (result) {
