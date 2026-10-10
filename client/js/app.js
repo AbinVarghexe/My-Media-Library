@@ -24,6 +24,8 @@
 
   var cs = new CSInterface();
 
+  var DEFAULT_USER_FOLDER = 'D:/Video Assets/Sound fx';
+
   var state = {
     host:             'UNKNOWN', // 'PPRO' | 'AEFT'
     folders:          [],        // string[] — normalized folder paths
@@ -41,7 +43,10 @@
     contextFolderNode: null,     // folder node shown in folder context menu
     seqInfo:          null,
     expandedFolders:  {},        // path -> boolean
-    sidebarCollapsed: false
+    sidebarCollapsed: false,
+    renderedCount:    0,
+    currentPool:      [],
+    batchSize:        60
   };
 
   var STORAGE_KEYS = {
@@ -54,7 +59,7 @@
   };
 
   // ══════════════════════════════════════════════════════════════════════════
-  // ── DOM Refs ────────────────────────────────══════════════════════════════
+  // ── DOM Refs ──────────────────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
 
   var $ = function (id) { return document.getElementById(id); };
@@ -63,7 +68,9 @@
     hostBadge:     $('host-badge'),
     emptyState:    $('empty-state'),
     loadingState:  $('loading-state'),
+    loadingStatus: $('loading-status-text'),
     noResults:     $('no-results'),
+    contentArea:   $('content-area'),
     fileGrid:      $('file-grid'),
     searchInput:   $('search-input'),
     clearSearch:   $('btn-clear-search'),
@@ -248,8 +255,11 @@
         }
       }
 
-      // 3. If loaded from disk, sync to localStorage; if not loaded from disk but localStorage had items, migrate to disk
-      if (loadedFromDisk) {
+      // 3. If no folders are configured anywhere, add the user's default folder
+      if (state.folders.length === 0 && DEFAULT_USER_FOLDER) {
+        state.folders = [normalizePath(DEFAULT_USER_FOLDER)];
+        _saveAllSettings();
+      } else if (loadedFromDisk) {
         _syncToLocalStorage();
       } else if (state.folders.length > 0) {
         _saveAllSettings();
@@ -334,6 +344,9 @@
   function scanLibrary() {
     if (state.folders.length === 0) { _showEmptyState(); return; }
     _showLoading();
+    if (dom.loadingStatus) {
+      dom.loadingStatus.textContent = 'Scanning media files…';
+    }
 
     FileScanner.scanFolders(cs, state.folders, function (result) {
       // Merge favorite state
@@ -357,6 +370,10 @@
       _renderFolderTree();
       _renderLibrary();
       _updateFolderListModal();
+    }, function (prog) {
+      if (dom.loadingStatus) {
+        dom.loadingStatus.textContent = 'Discovered ' + prog.count + ' files…';
+      }
     });
   }
 
@@ -366,6 +383,8 @@
 
   function _renderLibrary() {
     var files = _getFilteredFiles();
+    state.currentPool = files;
+    state.renderedCount = 0;
 
     dom.emptyState.style.display   = 'none';
     dom.loadingState.style.display = 'none';
@@ -383,11 +402,26 @@
     dom.fileCount.textContent    = files.length + ' item' + (files.length !== 1 ? 's' : '');
 
     dom.fileGrid.innerHTML = '';
+    // Reset scroll to top
+    if (dom.contentArea) dom.contentArea.scrollTop = 0;
+
+    _renderNextBatch();
+  }
+
+  function _renderNextBatch() {
+    if (!state.currentPool || state.renderedCount >= state.currentPool.length) return;
+
+    var start = state.renderedCount;
+    var end = Math.min(start + state.batchSize, state.currentPool.length);
+    var chunk = state.currentPool.slice(start, end);
+
     var frag = document.createDocumentFragment();
-    files.forEach(function (file) {
+    chunk.forEach(function (file) {
       frag.appendChild(_buildCard(file));
     });
     dom.fileGrid.appendChild(frag);
+
+    state.renderedCount = end;
   }
 
   function _getFilteredFiles() {
@@ -1139,6 +1173,18 @@
       _renderLibrary();
     });
 
+    // Infinite scroll for smooth rendering of large folders (4,000+ files)
+    if (dom.contentArea) {
+      dom.contentArea.addEventListener('scroll', function () {
+        if (state.currentPool && state.renderedCount < state.currentPool.length) {
+          var threshold = 400; // px from bottom
+          if (this.scrollHeight - this.scrollTop - this.clientHeight < threshold) {
+            _renderNextBatch();
+          }
+        }
+      });
+    }
+
     // Add Folder triggers
     $('btn-add-folder').addEventListener('click', function () { _openFolderModal(false); });
     $('btn-empty-add').addEventListener('click',  function () { _openFolderModal(true); });
@@ -1239,7 +1285,10 @@
     _updateFolderListModal();
     dom.folderModal.style.display = 'flex';
     if (dom.folderInput) {
-      setTimeout(function () { dom.folderInput.focus(); }, 100);
+      if (!dom.folderInput.value && DEFAULT_USER_FOLDER) {
+        dom.folderInput.value = DEFAULT_USER_FOLDER;
+      }
+      setTimeout(function () { dom.folderInput.select(); }, 100);
     }
     if (triggerBrowse === true) {
       _triggerAddFolder();
